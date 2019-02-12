@@ -258,7 +258,13 @@ class cbmmActionfind extends chatactionclass {
 			$md = '';
 			$numrows = 0;
 			$modrdo = '';
+			$moduleLinks = [];
 			foreach ($result as $rdorow) {
+				if (!isset($moduleLinks[$rdorow['search_module_name']])) {
+					$crmobj = CRMEntity::getInstance($rdorow['search_module_name']);
+					$linkLabel = Vtiger_Field::getInstance($crmobj->list_link_field, Vtiger_Module::getInstance($rdorow['search_module_name']))->label;
+					$moduleLinks[$rdorow['search_module_name']] = $linkLabel;
+				}
 				if ($rdorow['search_module_name']!=$modrdo) {
 					if ($md != '') {
 						$md .= "\n\n";
@@ -266,13 +272,20 @@ class cbmmActionfind extends chatactionclass {
 					$md .= $this->getSearchResultHeader($rdorow);
 				}
 				$md .= '| ';
+
+				$crmid = null;
+				if (!empty($rdorow['id'])) {
+					$crmid = explode('x', $rdorow['id'])[1];
+				}
+
 				foreach ($rdorow as $flabel => $fvalue) {
 					if ($flabel=='search_module_name') {
 						continue;
 					}
 					if ($flabel == 'id') {
-						list($wsid, $crmid) = explode('x', $fvalue);
-						$md .= $crmid.' | ';
+						$md .= '['.$crmid.'](mmlink?moduleName='.$rdorow['search_module_name'].'&id='.$crmid.') | ';
+					} elseif ($flabel == $moduleLinks[$rdorow['search_module_name']] && $crmid) {
+						$md .= '['.$fvalue.'](mmlink?moduleName='.$rdorow['search_module_name'].'&id='.$crmid.') | ';
 					} else {
 						$md .= convertFieldValue2Markdown($fvalue).' | ';
 					}
